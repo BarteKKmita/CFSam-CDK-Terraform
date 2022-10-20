@@ -1,0 +1,9 @@
+version = 0.1
+[dev]
+[dev.deploy]
+[dev.deploy.parameters]
+stack_name = "devioc"
+s3_bucket= "samiactestbartek"
+s3_prefix = "devioc"
+region = "us-east-1"
+capabilities = "CAPABILITY_NAMED_IAM"
