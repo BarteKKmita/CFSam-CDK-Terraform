@@ -10,7 +10,7 @@ Parameters:
   Environment:
     Type: String
     Description: A name for the environment example 'dev'
-    Default: dev
+    Default: prod
 
 Globals:
   Function:
@@ -18,7 +18,7 @@ Globals:
 
 Conditions:
   IsProd:
-    !Equals [!Ref Environment, prod]
+    !Equals [ !Ref Environment, prod ]
 
 Resources:
 
@@ -57,10 +57,10 @@ Resources:
     Type: AWS::EC2::Subnet
     Condition: IsProd
     Properties:
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 10.0.2.0/24
       AvailabilityZone:
         Fn::Select:
-          - 1
+          - 0
           - Fn::GetAZs: ""
       VpcId: !Ref IaCPresentationVpc
 
@@ -68,7 +68,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Condition: IsProd
     Properties:
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 10.0.3.0/24
       AvailabilityZone:
         Fn::Select:
           - 1
@@ -103,16 +103,12 @@ Resources:
     Condition: IsProd
     Type: AWS::EC2::RouteTable
     Properties:
-      Tags:
-        - Tag
       VpcId: !Ref IaCPresentationVpc
 
   IaCPresentationRouteTablePrivate:
     Condition: IsProd
     Type: AWS::EC2::RouteTable
     Properties:
-      Tags:
-        - Tag
       VpcId: !Ref IaCPresentationVpc
 
   PublicSubnetOneRouteTableAssociation:
@@ -155,6 +151,18 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref IaCPresentationNatGateway
 
+  IaCPresentationFunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: IaC Presentation Function Security Group
+      GroupDescription: IaC Presentation Function Security Group
+      VpcId: !Ref IaCPresentationVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 10.0.0.0/16
+
   IaCPresentationApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -166,14 +174,14 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: id
-          AttributeType: String
+          AttributeType: S
         - AttributeName: username
-          AttributeType: String
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: "HASH"
         - AttributeName: username
-            KeyType: "RANGE"
+          KeyType: "RANGE"
       TableName: IaCPresentationTable
 
   IaCPresentationFunction:
@@ -194,10 +202,13 @@ Resources:
       VpcConfig: !If
         - IsProd
         - SecurityGroupIds:
+            - !Ref IaCPresentationFunctionSecurityGroup
           SubnetIds:
             - !GetAtt IacPresentationPublicSubnetOne.SubnetId
         - SecurityGroupIds:
+            - !Ref 'AWS::NoValue'
           SubnetIds:
+            - !Ref 'AWS::NoValue'
       Environment:
         Variables:
           PARAM1: VALUE
