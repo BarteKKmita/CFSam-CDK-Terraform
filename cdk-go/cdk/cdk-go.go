@@ -21,9 +21,6 @@ func NewCdkGoStack(scope constructs.Construct, id string, props *CdkGoStackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// The code that defines your stack goes here
-
-	// example resource
 	function := awslambda.NewFunction(stack, jsii.String("myGoLambda"), &awslambda.FunctionProps{
 		Description:  jsii.String("Hello function"),
 		FunctionName: jsii.String("Hello"),

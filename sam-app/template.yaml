@@ -5,20 +5,179 @@ Description: >
   
   Sample SAM Template for sam-app
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+
+Parameters:
+  Environment:
+    Type: String
+    Description: A name for the environment example 'dev'
+    Default: dev
+
 Globals:
   Function:
     Timeout: 5
 
+Conditions:
+  IsProd:
+    !Equals [!Ref Environment, prod]
+
 Resources:
 
-  HelloWorldApi:
+  IaCPresentationVpc:
+    Type: AWS::EC2::VPC
+    Condition: IsProd
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+
+  IacPresentationPublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Condition: IsProd
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      VpcId: !Ref IaCPresentationVpc
+
+  IacPresentationPrivateSubnetOne:
+    Type: AWS::EC2::Subnet
+    Condition: IsProd
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      VpcId: !Ref IaCPresentationVpc
+
+  IacPresentationPublicSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Condition: IsProd
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      VpcId: !Ref IaCPresentationVpc
+
+  IacPresentationPrivateSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Condition: IsProd
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      VpcId: !Ref IaCPresentationVpc
+
+  IaCPresentationInternetGateway:
+    Condition: IsProd
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref IaCPresentationInternetGateway
+      VpcId: !Ref IaCPresentationVpc
+
+  IaCPresentationElasticIp:
+    Condition: IsProd
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  IaCPresentationNatGateway:
+    Condition: IsProd
+    Type: AWS::EC2::NatGateway
+    Properties:
+      ConnectivityType: public
+      SubnetId: !Ref IacPresentationPublicSubnetOne
+      AllocationId: !GetAtt IaCPresentationElasticIp.AllocationId
+
+  IaCPresentationRouteTablePublic:
+    Condition: IsProd
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Tag
+      VpcId: !Ref IaCPresentationVpc
+
+  IaCPresentationRouteTablePrivate:
+    Condition: IsProd
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Tag
+      VpcId: !Ref IaCPresentationVpc
+
+  PublicSubnetOneRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePublic
+      SubnetId: !Ref IacPresentationPublicSubnetOne
+
+  PublicSubnetTwoRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePublic
+      SubnetId: !Ref IacPresentationPublicSubnetTwo
+
+  PrivateSubnetOneRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePrivate
+      SubnetId: !Ref IacPresentationPrivateSubnetOne
+
+  PrivateSubnetTwoRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePrivate
+      SubnetId: !Ref IacPresentationPrivateSubnetTwo
+
+  IaCPresentationRoutePublic:
+    Condition: IsProd
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePublic
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IaCPresentationInternetGateway
+
+  IaCPresentationRoutePrivate:
+    Condition: IsProd
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref IaCPresentationRouteTablePrivate
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref IaCPresentationNatGateway
+
+  IaCPresentationApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: dev
+      StageName: !Ref Environment
 
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  IaCPresentationDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: String
+        - AttributeName: username
+          AttributeType: String
+      KeySchema:
+        - AttributeName: id
+          KeyType: "HASH"
+        - AttributeName: username
+            KeyType: "RANGE"
+      TableName: IaCPresentationTable
+
+  IaCPresentationFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: hello-world/
       Handler: hello-world
@@ -27,11 +186,18 @@ Resources:
         - x86_64
       Events:
         CatchAll:
-          Type: HttpApi # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: HttpApi
           Properties:
             Path: /hello
             Method: GET
-            ApiId: !Ref HelloWorldApi
-      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+            ApiId: !Ref IaCPresentationApi
+      VpcConfig: !If
+        - IsProd
+        - SecurityGroupIds:
+          SubnetIds:
+            - !GetAtt IacPresentationPublicSubnetOne.SubnetId
+        - SecurityGroupIds:
+          SubnetIds:
+      Environment:
         Variables:
           PARAM1: VALUE
