@@ -5,7 +5,7 @@ This is a sample template for sam-app - Below is a brief explanation of what we 
 ```bash
 .
 ├── README.md                   <-- This instructions file
-├── hello-world                 <-- Source code for a lambda function
+├── hello-world                 <-- Source code for a iac function
 │   ├── go.mod                  <-- Go dependency definitions
 │   ├── main.go                 <-- Lambda function code
 │   └── main_test.go            <-- Unit tests

@@ -1,4 +1,4 @@
-package main
+package iac
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ func TestCdkGoStack(t *testing.T) {
 	// GIVEN
 	app := awscdk.NewApp(nil)
 	// WHEN
-	stack := NewCdkGoStack(app, "CdkGoStack", nil)
+	stack := NewCdkGoIaCPresentationStack(app, "CdkGoStack", nil)
 	template := assertions.Template_FromStack(stack, nil)
 	// THEN
 	template.HasResourceProperties(jsii.String("AWS::SQS::Queue"), map[string]interface{}{
