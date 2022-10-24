@@ -1,4 +1,4 @@
-package main
+package lambda
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
@@ -21,15 +21,7 @@ func NewCdkGoStack(scope constructs.Construct, id string, props *CdkGoStackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	function := awslambda.NewFunction(stack, jsii.String("myGoLambda"), &awslambda.FunctionProps{
-		Description:  jsii.String("Hello function"),
-		FunctionName: jsii.String("Hello"),
-		MemorySize:   jsii.Number(128),
-		Timeout:      awscdk.Duration_Seconds(jsii.Number(10)),
-		Runtime:      awslambda.Runtime_GO_1_X(),
-		Handler:      jsii.String("main"),
-		Code:         awslambda.Code_FromAsset(jsii.String("../cmd/dist/main.zip"), nil),
-	})
+	function := awslambda.NewFunction(stack, jsii.String("myGoLambda"), lambdaFunctionProperties())
 
 	lambdaFunction := awseventstargets.NewLambdaFunction(function, nil)
 	var targets []awsevents.IRuleTarget
@@ -53,19 +45,14 @@ func NewCdkGoStack(scope constructs.Construct, id string, props *CdkGoStackProps
 	return stack
 }
 
-func main() {
-	defer jsii.Close()
-	app := awscdk.NewApp(nil)
-
-	NewCdkGoStack(app, "CdkGoStack", &CdkGoStackProps{
-		awscdk.StackProps{
-			Env: env(),
-		},
-	})
-
-	app.Synth(nil)
-}
-
-func env() *awscdk.Environment {
-	return nil
+func lambdaFunctionProperties() *awslambda.FunctionProps {
+	return &awslambda.FunctionProps{
+		Description:  jsii.String("Hello function"),
+		FunctionName: jsii.String("Hello"),
+		MemorySize:   jsii.Number(128),
+		Timeout:      awscdk.Duration_Seconds(jsii.Number(10)),
+		Runtime:      awslambda.Runtime_GO_1_X(),
+		Handler:      jsii.String("main"),
+		Code:         awslambda.Code_FromAsset(jsii.String("../cmd/dist/main.zip"), nil),
+	}
 }
