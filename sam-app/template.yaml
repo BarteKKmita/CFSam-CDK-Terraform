@@ -80,6 +80,7 @@ Resources:
     Type: AWS::EC2::InternetGateway
 
   InternetGatewayAttachment:
+    Condition: IsProd
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       InternetGatewayId: !Ref IaCPresentationInternetGateway
@@ -112,24 +113,28 @@ Resources:
       VpcId: !Ref IaCPresentationVpc
 
   PublicSubnetOneRouteTableAssociation:
+    Condition: IsProd
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref IaCPresentationRouteTablePublic
       SubnetId: !Ref IacPresentationPublicSubnetOne
 
   PublicSubnetTwoRouteTableAssociation:
+    Condition: IsProd
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref IaCPresentationRouteTablePublic
       SubnetId: !Ref IacPresentationPublicSubnetTwo
 
   PrivateSubnetOneRouteTableAssociation:
+    Condition: IsProd
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref IaCPresentationRouteTablePrivate
       SubnetId: !Ref IacPresentationPrivateSubnetOne
 
   PrivateSubnetTwoRouteTableAssociation:
+    Condition: IsProd
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref IaCPresentationRouteTablePrivate
@@ -152,6 +157,7 @@ Resources:
       NatGatewayId: !Ref IaCPresentationNatGateway
 
   IaCPresentationFunctionSecurityGroup:
+    Condition: IsProd
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: IaC Presentation Function Security Group
@@ -162,11 +168,6 @@ Resources:
           FromPort: 0
           ToPort: 65535
           CidrIp: 10.0.0.0/16
-
-  IaCPresentationApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      StageName: !Ref Environment
 
   IaCPresentationDatabase:
     Type: AWS::DynamoDB::Table
@@ -183,6 +184,11 @@ Resources:
         - AttributeName: username
           KeyType: "RANGE"
       TableName: IaCPresentationTable
+
+  IaCPresentationApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Environment
 
   IaCPresentationFunction:
     Type: AWS::Serverless::Function

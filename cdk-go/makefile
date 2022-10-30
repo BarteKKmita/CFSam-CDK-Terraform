@@ -4,7 +4,7 @@
 
 #linux
 build:
-	cd lambda/cmd; GOOS=linux GOARCH=amd64 go build -tags cloud -ldflags="-s -w" -o ./dist/main handler/main.go
+	cd lambda/cmd; pwd; GOOS=linux GOARCH=amd64 go build -tags cloud -ldflags="-s -w" -o ./dist/main handler/main.go
 
 zip: build
 	zip lambda/cmd/dist/main.zip lambda/cmd/dist/main
